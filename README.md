@@ -1,4 +1,14 @@
-# TRACER-framework
+# TRACER
+TRACER is a acronym, a punny mnemonic harkening to phone call tracing or maybe a tracer bullet, I dunno. It sounds cool. The TRACER Framework is a 6 Pillar system for enabling, conducting, and utilizing network derived cyberthreat/cyberattack intelligence. The framework begins with the work that should be done (hopefully) before the cyber incident, provides guidance on detecting the incident before documenting and communicating during the _the incident_. Finally, the framework moves into mitigating the threat and refining processes and controls. You can read about it below, though as of uploading this to Github, I'm not ready to put all my writing out there.
+
+tracer.py was once just a form, a young little _.md_. The I wrote some bad python until it become a neat little text file appender I used to track a cyber incident beginning with a threat packet's source and destination IP, then literally tracing the network manually and adding in lines for any network appliances and their network intelligence. It made lines that looked like this:
+DDOS 202504017:0623: 8.8.8.8->(Ge0/0{100.0.0.1[WANRouterA]192.168.0.1}Ge0/1)->(Ge0/0/0{VLAN100[Catalyst3850_lab]VLAN192}Ge0/0/1)->(192.168.0.27[webGoat_lab])
+It's super ugly. I didn't check who own that public IP, but it's not mine.
+tracer.py is what happened when I fed my python into Claude Opus 4.1, and it laughed in my face. Claude and I have been fighting now for a few days, but here it our prototype. You run it, it does the rest.
+
+Oh, and I built it mostly with python built-ins. If anyone wants to collab, let's try to keep it that way. I work in the cyber vendor space, and boy do some orgs have crazy rules about importing new python libs.
+
+# The TRACER Framework
 - TRUST: Network Appliance Integrity (Pre-Incident)
 	- Can you trust your Routers, Switches, Firewalls, Proxies, Load Balancers, IPS/IDS, NDRs have not been tampered with during an attack?
 		- This is simple in practice, but fundamental to the rest of the network forensics process. If your switch logs can be tampered with by an attacker, they are worse than forensically useless: They have become part of the attack itself.

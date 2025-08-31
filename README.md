@@ -11,7 +11,7 @@ Oh, and I built it mostly with python built-ins. If anyone wants to collab, let'
 # The TRACER Framework
 - TRUST: Network Appliance Integrity (Pre-Incident)
 	- Can you trust your Routers, Switches, Firewalls, Proxies, Load Balancers, IPS/IDS, NDRs have not been tampered with during an attack?
-		- This is simple in practice, but fundamental to the rest of the network forensics process. If your switch logs can be tampered with by an attacker, they are worse than forensically useless: They have become part of the attack itself.
+		- This is simple in practice but an administrative pain, and it's fundamental to the rest of the network forensics process. Harden your network appliances. If your switch logs can be tampered with by an attacker, they are worse than forensically useless: They have become part of the attack itself.
 	- Do you/your team have the competence to derive network forensic intelligence from network technologies?
 - RECOGNIZE: Threat Identification (Incident Starts)
 	- Can you catch the threat? (Discover)

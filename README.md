@@ -1,2 +1,17 @@
 # TRACE-framework
-TRACE Network Forensics Framework
+- TRUST: Network Appliance Integrity
+	- Can you trust your Routers, Switches, Firewalls, Proxies, Load Balancers, IPS/IDS, NDRs have not been tampered with during an attack?
+		- This is simple in practice, but fundamental to the rest of the network forensics process. If your switch logs can be tampered with by an attacker, they are worse than forensically useless: They have become part of the attack itself.
+- RECOGNIZE: Threat Identification
+	- Can you catch the threat? (Discover)
+		- Do you have network-based threat detection systems in place. At minimum, Next-Gen Firewall, WAN Edge IDS, and an East-West NDR around business applications are required.
+	- Can you define the nature of the Threat's traffic so that it can be caught initially or in the future? (Signature/Fingerprinting/Etc)
+		- Can you update these systems with the latest threat profile and create new profiles for emerging threats?
+- ANALYZE: Threat Traffic Mapping
+	- Can you then map the network traffic caused by the threat directly through C&C/recon/exploit/exfil and traversal, logically and chronologically?
+- COMMUNICATE: Threat Knowledge Collaboration and Documentation
+	- Can you work with other experts outside of your competence edge, silo, or separation of duties? Most attacks are not exclusively network attacks. The network forensics expert must be able to collaborate with other cybersecurity experts, systems teams, and sometimes legal and leadership.
+	- Can you document your findings?
+- ENGAGE: Threat Response
+	- Can you articulate network controls to stop the threat? This is why a network forensics expert must understand network and network service technologies from the endpoint NIC to the edge.
+	- Can you communicate your finding to influence Mitigation, Remediation, and Restoration?

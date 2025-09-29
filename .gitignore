@@ -10,12 +10,23 @@ tracer_log_*.json
 # Analysis output files
 tracer_analysis_*.json
 
+# Exported case files
+TRACER_Case_*.txt
+
 # Python cache
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 .Python
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Test files
+test_*.py
 
 # IDE files
 .vscode/

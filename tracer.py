@@ -16,11 +16,14 @@ https://github.com/steveinit/TRACER-framework.git
 
 import json
 from datetime import datetime
-from typing import Dict, List, Any, Tuple
+from typing import Dict, List, Any, Tuple, Optional
 import os
 
+# Import storage layer
+from storage import StorageInterface, JsonStorage
+
 class NetworkPathAnalyzer:
-    def __init__(self):
+    def __init__(self, storage_backend: Optional[StorageInterface] = None):
         self.analysis = {
             "timestamp": datetime.now().isoformat(),
             "initial_detection": {},
@@ -28,26 +31,18 @@ class NetworkPathAnalyzer:
             "network_elements": {},
             "path_sequence": []  # Ordered list of elements in the path
         }
-        
+
+        # Setup storage backend (defaults to JSON for backward compatibility)
+        self.storage = storage_backend or JsonStorage()
+
         # Setup real-time logging
         self.log_filename = f"tracer_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-        self.db_filename = "tracer_database.json"
         self.case_id = f"CASE_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
-        # Initialize JSON database
-        self.init_json_database()
+        # Initialize storage
+        self.storage.initialize_database()
         self.write_to_log("analysis_started", {"timestamp": self.analysis["timestamp"], "case_id": self.case_id})
     
-    def init_json_database(self):
-        """Initialize JSON database for persistent threat tracking"""
-        # Create JSON database if it doesn't exist
-        if not os.path.exists(self.db_filename):
-            initial_db = {"cases": {}, "metadata": {"created": datetime.now().isoformat(), "version": "1.0"}}
-            with open(self.db_filename, 'w') as f:
-                json.dump(initial_db, f, indent=2)
-            print(f"Created new database: {self.db_filename}")
-        else:
-            print(f"Using existing database: {self.db_filename}")
     
     def display_current_path(self):
         """Display the current network path with insertion points"""
@@ -212,27 +207,8 @@ class NetworkPathAnalyzer:
             self.analysis["path_sequence"].append(pivot_element_name)
     
     def load_existing_case(self, case_id: str):
-        """Load existing case data from JSON database"""
-        case_data = {
-            "initial_detection": {},
-            "network_elements": {},
-            "path_sequence": []
-        }
-
-        try:
-            with open(self.db_filename, 'r') as f:
-                db_data = json.load(f)
-
-            if case_id in db_data.get("cases", {}):
-                stored_case = db_data["cases"][case_id]
-                case_data["initial_detection"] = stored_case.get("initial_detection", {})
-                case_data["network_elements"] = stored_case.get("network_elements", {})
-                case_data["path_sequence"] = stored_case.get("path_sequence", [])
-
-        except Exception as e:
-            print(f"Warning: Could not load existing case: {e}")
-
-        return case_data
+        """Load existing case data from storage backend"""
+        return self.storage.load_case(case_id)
     
     def collect_element_info(self, element_name: str, direction: str):
         """Collect information for source or destination on a network element"""
@@ -268,31 +244,16 @@ class NetworkPathAnalyzer:
             self.save_case_to_db()
     
     def save_case_to_db(self):
-        """Save current case to JSON database"""
-        try:
-            # Load existing database
-            with open(self.db_filename, 'r') as f:
-                db_data = json.load(f)
-
-            # Save complete case data
-            case_data = {
-                "case_id": self.case_id,
-                "timestamp": self.analysis["timestamp"],
-                "initial_detection": self.analysis["initial_detection"],
-                "network_elements": self.analysis["network_elements"],
-                "path_sequence": self.analysis["path_sequence"],
-                "last_updated": datetime.now().isoformat()
-            }
-
-            # Update database
-            db_data["cases"][self.case_id] = case_data
-
-            # Write back to file
-            with open(self.db_filename, 'w') as f:
-                json.dump(db_data, f, indent=2)
-
-        except Exception as e:
-            print(f"Warning: Could not save case to database: {e}")
+        """Save current case to storage backend"""
+        case_data = {
+            "case_id": self.case_id,
+            "timestamp": self.analysis["timestamp"],
+            "initial_detection": self.analysis["initial_detection"],
+            "network_elements": self.analysis["network_elements"],
+            "path_sequence": self.analysis["path_sequence"],
+            "last_updated": datetime.now().isoformat()
+        }
+        self.storage.save_case(self.case_id, case_data)
     
     def write_to_log(self, action: str, data: Dict[str, Any]):
         """Write analysis actions to log file in real time"""
@@ -301,34 +262,11 @@ class NetworkPathAnalyzer:
             "action": action,
             "data": data
         }
-        
-        try:
-            if os.path.exists(self.log_filename):
-                with open(self.log_filename, 'r') as f:
-                    log_data = json.load(f)
-            else:
-                log_data = {"tracer_log": []}
-            
-            log_data["tracer_log"].append(log_entry)
-            
-            with open(self.log_filename, 'w') as f:
-                json.dump(log_data, f, indent=2)
-                
-        except Exception as e:
-            print(f"Warning: Could not write to log file: {e}")
+        self.storage.write_log_entry(self.log_filename, log_entry)
     
     def check_existing_cases(self):
-        """Check for existing cases in JSON database"""
-        if not os.path.exists(self.db_filename):
-            return []
-
-        try:
-            with open(self.db_filename, 'r') as f:
-                db_data = json.load(f)
-            return list(db_data.get("cases", {}).keys())
-        except Exception as e:
-            print(f"Warning: Could not read existing cases: {e}")
-            return []
+        """Check for existing cases in storage backend"""
+        return self.storage.list_cases()
     
     def start_analysis(self):
         """Start the TRACER analysis with initial detection"""
@@ -343,7 +281,7 @@ class NetworkPathAnalyzer:
             for case in existing_cases[-5:]:  # Show last 5 cases
                 print(f"  {case}")
             
-            choice = input(f"\nContinue existing case, start new case, or view case? (continue/new/view): ").lower()
+            choice = input(f"\nContinue existing case, start new case, view case, or print case? (continue/new/view/print): ").lower()
             
             if choice == "continue":
                 case_id = input("Enter case ID to continue: ")
@@ -361,14 +299,19 @@ class NetworkPathAnalyzer:
                         
                         # Continue with enrichment
                         self.enrich_analysis()
-                        return
+                        return True  # Analysis was performed
                 else:
                     print("Case not found, starting new case...")
             elif choice == "view":
                 case_id = input("Enter case ID to view: ")
                 if case_id in existing_cases:
                     self.view_case(case_id)
-                    return
+                    return False  # Indicate no analysis was performed
+            elif choice == "print":
+                case_id = input("Enter case ID to print: ")
+                if case_id in existing_cases:
+                    self.print_case_to_file(case_id)
+                    return False  # Indicate no analysis was performed
         
         # Get initial detection for new case
         print("\n--- INITIAL DETECTION ---")
@@ -394,6 +337,7 @@ class NetworkPathAnalyzer:
         
         # Start enrichment process
         self.enrich_analysis()
+        return True  # Analysis was performed
     
     def view_case(self, case_id: str):
         """View existing case data with path visualization"""
@@ -437,7 +381,107 @@ class NetworkPathAnalyzer:
             print(f"DESTINATION: {case_data['initial_detection'].get('destination_ip', 'Unknown')}")
         else:
             print("No network path recorded for this case.")
-    
+
+    def print_case_to_file(self, case_id: str):
+        """Export case details to a text file with both human-readable and JSON formats"""
+        case_data = self.load_existing_case(case_id)
+
+        # Generate filename with timestamp
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"TRACER_Case_{case_id}_{timestamp}.txt"
+
+        try:
+            with open(filename, 'w') as f:
+                # Header
+                f.write("="*80 + "\n")
+                f.write("TRACER FRAMEWORK - CASE EXPORT\n")
+                f.write("="*80 + "\n")
+                f.write(f"Export Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                f.write(f"Case ID: {case_id}\n")
+                f.write("="*80 + "\n\n")
+
+                # Case details
+                f.write(f"--- CASE DETAILS: {case_id} ---\n")
+                if case_data["initial_detection"]:
+                    detection = case_data["initial_detection"]
+                    f.write(f"Threat: {detection.get('threat_type', 'Unknown')}\n")
+                    f.write(f"Source: {detection.get('source_ip', 'Unknown')}\n")
+                    f.write(f"Destination: {detection.get('destination_ip', 'Unknown')}\n")
+
+                # Network path
+                if case_data.get("path_sequence"):
+                    f.write("\n--- NETWORK PATH ---\n")
+                    f.write(f"SOURCE: {case_data['initial_detection'].get('source_ip', 'Unknown')}\n")
+
+                    for element_name in case_data["path_sequence"]:
+                        element = case_data["network_elements"].get(element_name, {})
+                        f.write("    ↓\n")
+                        movement = element.get("movement_type", "direct").replace("_", " ").title()
+
+                        if element.get("type") == "pivot_point":
+                            f.write(f"  **PIVOT** {element_name}\n")
+                            f.write(f"    Method: {element.get('pivot_method', 'Unknown')}\n")
+                            f.write(f"    Target: {element.get('pivot_ip', 'Unknown')}\n")
+                        else:
+                            f.write(f"  {element_name} ({element.get('type', 'unknown').upper()}) - {movement}\n")
+
+                        if element.get("source_info"):
+                            f.write("    Source Info:\n")
+                            for info_type, info_value in element["source_info"].items():
+                                f.write(f"      • {info_type}: {info_value}\n")
+
+                        if element.get("destination_info"):
+                            f.write("    Destination Info:\n")
+                            for info_type, info_value in element["destination_info"].items():
+                                f.write(f"      • {info_type}: {info_value}\n")
+
+                    f.write("    ↓\n")
+                    f.write(f"DESTINATION: {case_data['initial_detection'].get('destination_ip', 'Unknown')}\n")
+                else:
+                    f.write("\nNo network path recorded for this case.\n")
+
+                # Analysis summary
+                f.write("\n" + "="*80 + "\n")
+                f.write("ANALYSIS SUMMARY\n")
+                f.write("="*80 + "\n")
+
+                if case_data.get("network_elements"):
+                    direct_traversals = sum(1 for e in case_data["network_elements"].values()
+                                           if e.get("movement_type") == "direct_traversal")
+                    lateral_movements = sum(1 for e in case_data["network_elements"].values()
+                                           if e.get("movement_type") == "lateral_movement")
+                    pivot_points = sum(1 for e in case_data["network_elements"].values()
+                                      if e.get("type") == "pivot_point")
+
+                    f.write(f"Total Network Elements: {len(case_data['network_elements'])}\n")
+                    f.write(f"Direct Traversals: {direct_traversals}\n")
+                    f.write(f"Lateral Movements: {lateral_movements}\n")
+                    f.write(f"Pivot Points: {pivot_points}\n")
+                else:
+                    f.write("No network elements recorded.\n")
+
+                # Raw JSON data
+                f.write("\n" + "="*80 + "\n")
+                f.write("RAW CASE DATA (JSON)\n")
+                f.write("="*80 + "\n")
+                f.write("# This JSON data can be imported into other tools or used for analysis\n\n")
+
+                # Load the complete case data from storage
+                complete_case = self.storage.load_case(case_id)
+                f.write(json.dumps(complete_case, indent=2))
+
+                f.write("\n\n" + "="*80 + "\n")
+                f.write("END OF CASE EXPORT\n")
+                f.write("="*80 + "\n")
+
+            print(f"\n✓ Case exported to: {filename}")
+            print(f"  - Human-readable case details")
+            print(f"  - Analysis summary with statistics")
+            print(f"  - Complete JSON data for tool integration")
+
+        except Exception as e:
+            print(f"\n❌ Error exporting case: {e}")
+
     def generate_report(self):
         """Generate final TRACER analysis report with ordered path"""
         print("\n" + "="*60)
@@ -499,19 +543,22 @@ class NetworkPathAnalyzer:
                 json.dump(self.analysis, f, indent=2)
             print(f"Analysis saved to {filename}")
         
-        print(f"Case data automatically saved to: {self.db_filename}")
+        print(f"Case data automatically saved to storage backend")
     
     def run(self):
         """Main execution method"""
         try:
-            self.start_analysis()
-            self.generate_report()
-            
-            print("\n" + "="*60)
-            print("TRACER Analysis Complete")
-            print("Trust → Recognize → Analyze → Communicate → Engage → Refine")
-            print("="*60)
-            
+            analysis_performed = self.start_analysis()
+
+            # Only generate report if we actually performed analysis
+            if analysis_performed:
+                self.generate_report()
+
+                print("\n" + "="*60)
+                print("TRACER Analysis Complete")
+                print("Trust → Recognize → Analyze → Communicate → Engage → Refine")
+                print("="*60)
+
         except KeyboardInterrupt:
             print("\n\nAnalysis interrupted by user")
         except Exception as e:

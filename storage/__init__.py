@@ -5,5 +5,13 @@ Provides abstraction for different storage backends (JSON, MongoDB, etc.)
 
 from .base import StorageInterface
 from .json_storage import JsonStorage
+from .factory import get_storage_backend, create_storage, print_storage_info
 
-__all__ = ['StorageInterface', 'JsonStorage']
+# Try to import MongoDB storage (optional)
+try:
+    from .mongo_storage import MongoStorage
+    MONGODB_AVAILABLE = True
+    __all__ = ['StorageInterface', 'JsonStorage', 'MongoStorage', 'get_storage_backend', 'create_storage', 'print_storage_info']
+except ImportError:
+    MONGODB_AVAILABLE = False
+    __all__ = ['StorageInterface', 'JsonStorage', 'get_storage_backend', 'create_storage', 'print_storage_info']

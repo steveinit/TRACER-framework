@@ -20,7 +20,14 @@ from typing import Dict, List, Any, Tuple, Optional
 import os
 
 # Import storage layer
-from storage import StorageInterface, JsonStorage
+from storage import StorageInterface, JsonStorage, create_storage, print_storage_info
+
+# Load environment variables
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
 class NetworkPathAnalyzer:
     def __init__(self, storage_backend: Optional[StorageInterface] = None):
@@ -32,8 +39,8 @@ class NetworkPathAnalyzer:
             "path_sequence": []  # Ordered list of elements in the path
         }
 
-        # Setup storage backend (defaults to JSON for backward compatibility)
-        self.storage = storage_backend or JsonStorage()
+        # Setup storage backend (auto-detect or use provided)
+        self.storage = storage_backend or create_storage()
 
         # Setup real-time logging
         self.log_filename = f"tracer_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
@@ -566,6 +573,7 @@ class NetworkPathAnalyzer:
 
 def main():
     """Main entry point"""
+    print_storage_info()
     analyzer = NetworkPathAnalyzer()
     analyzer.run()
 

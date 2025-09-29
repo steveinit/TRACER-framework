@@ -1,0 +1,33 @@
+# TRACER Framework - Local Development with MongoDB
+version: '3.8'
+
+services:
+  tracer-api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - STORAGE_TYPE=mongo
+      - MONGODB_URL=mongodb://mongodb:27017
+      - MONGODB_DATABASE=tracer
+      - CORS_ORIGINS=*
+      - LOG_LEVEL=info
+    depends_on:
+      - mongodb
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+
+  mongodb:
+    image: mongo:7.0
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init:/docker-entrypoint-initdb.d
+    environment:
+      - MONGO_INITDB_DATABASE=tracer
+    restart: unless-stopped
+
+volumes:
+  mongodb_data:

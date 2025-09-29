@@ -28,6 +28,11 @@ htmlcov/
 # Test files
 test_*.py
 
+# Virtual environments
+venv/
+env/
+.venv/
+
 # IDE files
 .vscode/
 .idea/
@@ -42,3 +47,6 @@ test_*.py
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Environment variables
+.env

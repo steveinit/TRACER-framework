@@ -1,0 +1,19 @@
+# TRACER Framework - MongoDB Atlas Production
+version: '3.8'
+
+services:
+  tracer-api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - STORAGE_TYPE=mongo
+      - MONGODB_URL=${MONGODB_URL}
+      - MONGODB_DATABASE=${MONGODB_DATABASE:-tracer}
+      - CORS_ORIGINS=${CORS_ORIGINS:-*}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped

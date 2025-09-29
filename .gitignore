@@ -1,0 +1,33 @@
+# TRACER Framework - Generated Files
+# Exclude logging and database files
+
+# JSON database files
+tracer_database.json
+
+# Log files
+tracer_log_*.json
+
+# Analysis output files
+tracer_analysis_*.json
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

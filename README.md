@@ -10,6 +10,121 @@ tracer.py is what happened when I fed my python into Claude Opus 4.1, and it lau
 
 Oh, and I built it mostly with python built-ins. If anyone wants to collab, let's try to keep it that way. I work in the cyber vendor space, and boy do some orgs have crazy rules about importing new python libs.
 
+## Example Output
+
+Here's an example of TRACER in action, analyzing a SQL injection attack path:
+
+```
+============================================================
+TRACER Framework - Network Path Analysis Tool
+============================================================
+
+--- INITIAL DETECTION ---
+Threat type detected (e.g., SQL Injection, Malware C2): SQL Injection
+Source IP address: 192.168.1.100
+Destination IP address: 10.0.0.50
+
+Detected: SQL Injection
+  Source: 192.168.1.100
+  Destination: 10.0.0.50
+
+--- ENRICHMENT LEVEL 1 ---
+============================================================
+CURRENT NETWORK PATH
+============================================================
+SOURCE: 192.168.1.100
+  [1] <-- Insert Point
+    ↓
+DESTINATION: 10.0.0.50
+
+Your choice: 1
+--- ADD NETWORK ELEMENT ---
+Network element type: firewall
+Firewall name/identifier: ASA-5525
+Is this direct traversal or lateral movement? (direct/lateral): direct
+
+--- ASA-5525 INFORMATION ---
+Information type: source_interface
+source_interface: GigabitEthernet0/1
+
+Add destination-specific information for this element? (y/n): y
+Information type: destination_interface
+destination_interface: GigabitEthernet0/2
+Information type: ACL_rule
+ACL_rule: permit tcp any host 10.0.0.50 eq 80
+
+--- ENRICHMENT LEVEL 2 ---
+============================================================
+CURRENT NETWORK PATH
+============================================================
+SOURCE: 192.168.1.100
+  [1] <-- Insert Point
+    ↓
+  ASA-5525 (FIREWALL) - Direct Traversal
+      • source_interface: GigabitEthernet0/1
+  [2] <-- Insert Point
+    ↓
+DESTINATION: 10.0.0.50
+
+Your choice: 2
+--- ADD NETWORK ELEMENT ---
+Network element type: switch
+Switch name/identifier: Catalyst-3850
+Is this direct traversal or lateral movement? (direct/lateral): direct
+
+--- CATALYST-3850 INFORMATION ---
+Information type: source_port
+source_port: Gi1/0/24
+Information type: CAM_entry
+CAM_entry: 0025.64FF.EE12
+
+Add destination-specific information for this element? (y/n): y
+Information type: destination_port
+destination_port: Gi1/0/12
+Information type: VLAN
+VLAN: 100
+
+Your choice: done
+
+============================================================
+TRACER ANALYSIS REPORT
+============================================================
+
+Case ID: CASE_20250929_125453
+Threat Type: SQL Injection
+Analysis Timestamp: 2025-09-29T12:54:53.653779
+Network Elements Analyzed: 2
+
+--- COMPLETE NETWORK PATH ---
+SOURCE: 192.168.1.100
+    ↓
+  ASA-5525 (FIREWALL) - Direct Traversal
+      Source → source_interface: GigabitEthernet0/1
+      Dest → destination_interface: GigabitEthernet0/2
+      Dest → ACL_rule: permit tcp any host 10.0.0.50 eq 80
+    ↓
+  Catalyst-3850 (SWITCH) - Direct Traversal
+      Source → source_port: Gi1/0/24
+      Source → CAM_entry: 0025.64FF.EE12
+      Dest → destination_port: Gi1/0/12
+      Dest → VLAN: 100
+    ↓
+DESTINATION: 10.0.0.50
+
+--- ANALYSIS SUMMARY ---
+Direct Traversals: 2
+Lateral Movements: 0
+Pivot Points: 0
+
+Save analysis to JSON file? (y/n): y
+Analysis saved to tracer_analysis_CASE_20250929_125453.json
+Case data automatically saved to: tracer_database.json
+
+============================================================
+TRACER Analysis Complete
+Trust → Recognize → Analyze → Communicate → Engage → Refine
+============================================================
+
 # The TRACER Framework
 - TRUST: Network Appliance Integrity (Pre-Incident)
 	- Can you trust your Routers, Switches, Firewalls, Proxies, Load Balancers, IPS/IDS, NDRs have not been tampered with during an attack?

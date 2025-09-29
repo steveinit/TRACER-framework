@@ -15,7 +15,6 @@ https://github.com/steveinit/TRACER-framework.git
 """
 
 import json
-import csv
 from datetime import datetime
 from typing import Dict, List, Any, Tuple
 import os
@@ -32,39 +31,23 @@ class NetworkPathAnalyzer:
         
         # Setup real-time logging
         self.log_filename = f"tracer_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-        self.csv_filename = "tracer_database.csv"
+        self.db_filename = "tracer_database.json"
         self.case_id = f"CASE_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        
-        # Initialize CSV database  
-        self.init_csv_database()
+
+        # Initialize JSON database
+        self.init_json_database()
         self.write_to_log("analysis_started", {"timestamp": self.analysis["timestamp"], "case_id": self.case_id})
     
-    def init_csv_database(self):
-        """Initialize CSV database for persistent threat tracking"""
-        csv_headers = [
-            "case_id",
-            "timestamp", 
-            "threat_type",
-            "source_ip",
-            "destination_ip",
-            "element_name",
-            "element_type",
-            "direction",
-            "info_type",
-            "info_value",
-            "movement_type",
-            "enrichment_level",
-            "path_position"  # New field for ordering
-        ]
-        
-        # Create CSV if it doesn't exist
-        if not os.path.exists(self.csv_filename):
-            with open(self.csv_filename, 'w', newline='') as csvfile:
-                writer = csv.writer(csvfile)
-                writer.writerow(csv_headers)
-                print(f"Created new database: {self.csv_filename}")
+    def init_json_database(self):
+        """Initialize JSON database for persistent threat tracking"""
+        # Create JSON database if it doesn't exist
+        if not os.path.exists(self.db_filename):
+            initial_db = {"cases": {}, "metadata": {"created": datetime.now().isoformat(), "version": "1.0"}}
+            with open(self.db_filename, 'w') as f:
+                json.dump(initial_db, f, indent=2)
+            print(f"Created new database: {self.db_filename}")
         else:
-            print(f"Using existing database: {self.csv_filename}")
+            print(f"Using existing database: {self.db_filename}")
     
     def display_current_path(self):
         """Display the current network path with insertion points"""
@@ -181,7 +164,7 @@ class NetworkPathAnalyzer:
                 }
                 log_data.update(self.analysis["initial_detection"])
                 self.write_to_log("network_element_added", log_data)
-                self.write_to_csv(log_data)
+                self.save_case_to_db()
             
             # Get element information
             print(f"\n--- {element_name.upper()} INFORMATION ---")
@@ -229,60 +212,26 @@ class NetworkPathAnalyzer:
             self.analysis["path_sequence"].append(pivot_element_name)
     
     def load_existing_case(self, case_id: str):
-        """Load existing case data from CSV with path sequence"""
+        """Load existing case data from JSON database"""
         case_data = {
             "initial_detection": {},
             "network_elements": {},
             "path_sequence": []
         }
-        
-        elements_with_positions = []
-        
+
         try:
-            with open(self.csv_filename, 'r') as csvfile:
-                reader = csv.DictReader(csvfile)
-                for row in reader:
-                    if row['case_id'] == case_id:
-                        # Load initial detection data
-                        if row.get('threat_type') and not case_data["initial_detection"]:
-                            case_data["initial_detection"] = {
-                                "threat_type": row['threat_type'],
-                                "source_ip": row['source_ip'],
-                                "destination_ip": row['destination_ip']
-                            }
-                        
-                        # Load network element data
-                        if row.get('element_name'):
-                            element_name = row['element_name']
-                            if element_name not in case_data["network_elements"]:
-                                case_data["network_elements"][element_name] = {
-                                    "type": row.get('element_type', 'unknown'),
-                                    "source_info": {},
-                                    "destination_info": {},
-                                    "movement_type": row.get('movement_type', 'direct_traversal')
-                                }
-                                
-                                # Track position if available
-                                if row.get('path_position'):
-                                    elements_with_positions.append((int(row['path_position']), element_name))
-                            
-                            # Load element information
-                            if row.get('direction') and row.get('info_type'):
-                                direction = row['direction']
-                                info_key = f"{direction}_info"
-                                case_data["network_elements"][element_name][info_key][row['info_type']] = row['info_value']
-            
-            # Reconstruct path sequence from positions
-            if elements_with_positions:
-                elements_with_positions.sort(key=lambda x: x[0])
-                case_data["path_sequence"] = [elem[1] for elem in elements_with_positions]
-            else:
-                # Fallback: use all elements in order they appear
-                case_data["path_sequence"] = list(case_data["network_elements"].keys())
-        
+            with open(self.db_filename, 'r') as f:
+                db_data = json.load(f)
+
+            if case_id in db_data.get("cases", {}):
+                stored_case = db_data["cases"][case_id]
+                case_data["initial_detection"] = stored_case.get("initial_detection", {})
+                case_data["network_elements"] = stored_case.get("network_elements", {})
+                case_data["path_sequence"] = stored_case.get("path_sequence", [])
+
         except Exception as e:
             print(f"Warning: Could not load existing case: {e}")
-        
+
         return case_data
     
     def collect_element_info(self, element_name: str, direction: str):
@@ -316,33 +265,34 @@ class NetworkPathAnalyzer:
             csv_data.update(self.analysis["initial_detection"])
             
             self.write_to_log("information_added", csv_data)
-            self.write_to_csv(csv_data)
+            self.save_case_to_db()
     
-    def write_to_csv(self, data: Dict[str, Any]):
-        """Write data to CSV database"""
+    def save_case_to_db(self):
+        """Save current case to JSON database"""
         try:
-            with open(self.csv_filename, 'a', newline='') as csvfile:
-                writer = csv.writer(csvfile)
-                
-                row = [
-                    data.get("case_id", self.case_id),
-                    data.get("timestamp", datetime.now().isoformat()),
-                    data.get("threat_type", ""),
-                    data.get("source_ip", ""),
-                    data.get("destination_ip", ""),
-                    data.get("element_name", ""),
-                    data.get("element_type", ""),
-                    data.get("direction", ""),
-                    data.get("info_type", ""),
-                    data.get("info_value", ""),
-                    data.get("movement_type", "direct_traversal"),
-                    data.get("enrichment_level", 0),
-                    data.get("path_position", 0)
-                ]
-                
-                writer.writerow(row)
+            # Load existing database
+            with open(self.db_filename, 'r') as f:
+                db_data = json.load(f)
+
+            # Save complete case data
+            case_data = {
+                "case_id": self.case_id,
+                "timestamp": self.analysis["timestamp"],
+                "initial_detection": self.analysis["initial_detection"],
+                "network_elements": self.analysis["network_elements"],
+                "path_sequence": self.analysis["path_sequence"],
+                "last_updated": datetime.now().isoformat()
+            }
+
+            # Update database
+            db_data["cases"][self.case_id] = case_data
+
+            # Write back to file
+            with open(self.db_filename, 'w') as f:
+                json.dump(db_data, f, indent=2)
+
         except Exception as e:
-            print(f"Warning: Could not write to CSV database: {e}")
+            print(f"Warning: Could not save case to database: {e}")
     
     def write_to_log(self, action: str, data: Dict[str, Any]):
         """Write analysis actions to log file in real time"""
@@ -368,21 +318,17 @@ class NetworkPathAnalyzer:
             print(f"Warning: Could not write to log file: {e}")
     
     def check_existing_cases(self):
-        """Check for existing cases in CSV database"""
-        if not os.path.exists(self.csv_filename):
+        """Check for existing cases in JSON database"""
+        if not os.path.exists(self.db_filename):
             return []
-        
-        existing_cases = set()
+
         try:
-            with open(self.csv_filename, 'r') as csvfile:
-                reader = csv.DictReader(csvfile)
-                for row in reader:
-                    if row.get('case_id'):
-                        existing_cases.add(row['case_id'])
+            with open(self.db_filename, 'r') as f:
+                db_data = json.load(f)
+            return list(db_data.get("cases", {}).keys())
         except Exception as e:
             print(f"Warning: Could not read existing cases: {e}")
-        
-        return list(existing_cases)
+            return []
     
     def start_analysis(self):
         """Start the TRACER analysis with initial detection"""
@@ -436,11 +382,11 @@ class NetworkPathAnalyzer:
             "destination_ip": dest_ip
         }
         
-        # Log initial detection and write to CSV
+        # Log initial detection and save to JSON database
         log_data = dict(self.analysis["initial_detection"])
         log_data["case_id"] = self.case_id
         self.write_to_log("initial_detection", log_data)
-        self.write_to_csv(log_data)
+        self.save_case_to_db()
         
         print(f"\nDetected: {threat_type}")
         print(f"  Source: {source_ip}")
@@ -553,7 +499,7 @@ class NetworkPathAnalyzer:
                 json.dump(self.analysis, f, indent=2)
             print(f"Analysis saved to {filename}")
         
-        print(f"Case data automatically saved to: {self.csv_filename}")
+        print(f"Case data automatically saved to: {self.db_filename}")
     
     def run(self):
         """Main execution method"""

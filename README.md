@@ -2,18 +2,23 @@
 
 **Version 0.2** - Interactive network forensics and path analysis for cybersecurity incident response.
 
-> 📋 **Important**: This tool implements the [TRACER Framework](FRAMEWORK.md) - a comprehensive methodology for network-based threat intelligence. Understanding the framework is essential for effective use of this tool.
+> 📋 **Important**: The TRACER network path analysis tool (TRACER PAL) is designed to empower security practitioners in the Analyze and Communicate pillars of the [TRACER Framework](FRAMEWORK.md) - a comprehensive methodology for network-based threat intelligence. Understanding the framework is essential for effective use of this tool. 
 
 ## Overview
 
 TRACER is a network path analysis tool designed for cybersecurity professionals conducting incident response and forensic investigations. It helps map network traffic paths from source to destination, documenting all network appliances and their configurations along the way.
 
 **Key Features:**
-- 🖥️ **Dual Interface**: Command-line tool and REST API
-- ☁️ **Flexible Storage**: Local JSON files or MongoDB Atlas cloud storage
-- 🐳 **Container Ready**: Docker deployment for production environments
-- 📊 **Rich Documentation**: Detailed case analysis and reporting
-- 🔗 **Integration Friendly**: REST API for automation and SIEM integration
+- **Dual Interface**: Command-line tool and REST API
+- **Flexible Storage**: Local JSON files or MongoDB Atlas cloud storage
+- **Container Ready**: Docker deployment for production environments
+- **Rich Documentation**: Detailed case analysis and reporting
+- **Integration Friendly**: REST API for automation and SIEM integration
+
+## Use Cases
+- **Attack Surface Mapping**: Document the exposed perimeters and endpoints from a network-centric perspective. Allows security practitioners to refine perimeter and endpoint monitoring and controls: Firewall, Router, NDR, IDS/IPS, Endpoint Security.
+- **Threat Traversal Mapping**: Document network path traversed by the threat. Allows security practitioners to take defense-in-depth approach to monitoring and controls: Switch, NDR, NAC.
+- **Iterative Threat Emulation**: Think like a threat actor. Document attack paths as well as circumvention paths around controls and monitoring.
 
 ## Quick Start
 

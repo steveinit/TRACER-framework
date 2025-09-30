@@ -3,7 +3,7 @@
 > **Status**: Work in Progress
 > **Vision**: Evolve TRACER from CLI tool to enterprise-ready network forensics platform while maintaining simplicity for small security teams
 
-## Current State (v0.1)
+## Current State (v0.2)
 
 🧪 **CLI Tool - Beta Testing Phase**
 - Interactive network path analysis
@@ -40,9 +40,21 @@ We're actively testing the CLI tool with various network forensics scenarios and
 ## Future Vision (Phases likely to change)
 
 ### Phase 1: CLI Stabilization
-- Modularize code: I'm a network security dude doing my best. I know Tracer is currently monolithic. We gotta break it down into functional components, so that's the current focus.
+- coming v0.3 Refactor inputs from raw text fields to selections with options for raw text exceptions
+> Intended Workflow changes vs raw text only
+> Launch tracer.py
+>
+> Input Threat Activity, Related Case|Ticket #s, Source|Offender, and Destination|Victim
+>
+>> Select Node Activity: [Control|Monitoring|Control&Monitoring|Other]
+>>
+>> Select Node Type: [Firewall|Router|Switch|NDR|IDS|IPS|WAP|Proxy|Other]
+>>
+>> Select [Selections based on Node Type|Input Other]
+>>>
+>>> Select Traffic Direction: [Inbound|Outbound|East-West|Hairpin] (likely will rework where this fits in)
 - Address critical bugs and feedback from testing phase (please break it and tell us)
-- documentation (yay)
+- Documentation (yay)
 
 ### Phase 2: API Backend
 - REST API wrapping the CLI engine

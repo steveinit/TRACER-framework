@@ -55,14 +55,14 @@ def get_storage_backend(force_backend: Optional[str] = None) -> StorageInterface
 def _get_mongo_storage(mongodb_url: Optional[str] = None) -> StorageInterface:
     """Get MongoDB storage instance with error handling"""
     try:
-        from .mongo_storage import MongoStorage
-        storage = MongoStorage(mongodb_url)
+        from .mongo_storage_sync import MongoStorageSync
+        storage = MongoStorageSync(mongodb_url)
         # Test initialization
         storage.initialize_database()
         return storage
     except ImportError:
         raise ImportError(
-            "MongoDB dependencies not installed. Install with: pip install motor pymongo"
+            "MongoDB dependencies not installed. Install with: pip install pymongo"
         )
     except Exception as e:
         raise ConnectionError(f"Failed to connect to MongoDB: {e}")

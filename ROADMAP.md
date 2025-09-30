@@ -1,7 +1,7 @@
 # TRACER Framework Development Roadmap
 
 > **Status**: Work in Progress
-> **Vision**: Evolve TRACER from CLI tool to enterprise-ready network forensics platform while maintaining simplicity for small security teams
+> **Vision**: Evolve TRACER PAL from CLI tool to enterprise-ready network forensics platform while maintaining simplicity for small security teams
 
 ## Current State (v0.2)
 
@@ -76,7 +76,7 @@ We're actively testing the CLI tool with various network forensics scenarios and
 
 ## Contributing
 
-This roadmap represents the evolution plan for TRACER. We welcome:
+This roadmap represents the evolution plan for TRACER PAL. We welcome:
 - **Testing feedback**: Real-world usage scenarios and edge cases
 - **Architecture input**: High-level design suggestions
 - **Use case validation**: Does this meet your network forensics needs?

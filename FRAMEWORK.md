@@ -40,4 +40,4 @@ The TRACER Framework emphasizes the critical importance of network-based intelli
 
 ## Related Tools
 
-The TRACER network path analysis tool is designed to empower security practitioners in the Analyze and Communicate pillars. See [README.md](README.md) for technical documentation and usage instructions.
+TRACER PAL is designed to empower security practitioners in the Analyze and Communicate pillars. See [README.md](README.md) for technical documentation and usage instructions.

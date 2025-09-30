@@ -1,4 +1,4 @@
-# TRACER Network Path Analysis Tool
+# TRACER PAL - Path Analysis Tool
 
 **Version 0.2** - Interactive network forensics and path analysis for cybersecurity incident response.
 
@@ -18,7 +18,7 @@ TRACER PAL is a network path analysis tool designed for cybersecurity profession
 ## Use Cases
 - **Attack Surface Mapping/Tracing**: Document the exposed perimeters and endpoints from a network-centric perspective - This is your threat infiltration location - Allows security practitioners to refine perimeter and endpoint monitoring and controls.
 - **Threat Traversal Mapping/Tracing**: Document network path traversed by the threat - This is your comprehensive blast radius: where the Threat went beyond the traditional "what they touched" - Allows security practitioners to take defense-in-depth approach to monitoring and controls.
-- **Iterative Threat Emulation**: Think like a threat threat actor. Document attack paths as well as circumvention paths around controls and monitoring.
+- **Iterative Threat Emulation**: Think like a threat actor. Document attack paths as well as circumvention paths around controls and monitoring.
 - **Control Implementation Assessment**: Validate controls perform as expected.
 
 ### Implementing Controls and Monitoring
@@ -69,11 +69,11 @@ docker-compose up
 
 ## Example Analysis
 
-Here's how TRACER documents a network path during incident investigation:
+Here's how TRACER PAL documents a network path during incident investigation:
 
 ```
 ============================================================
-TRACER Analysis Report - SQL Injection Attack
+TRACER PAL Analysis Report - SQL Injection Attack
 ============================================================
 
 Case ID: CASE_20240929_125453
@@ -102,7 +102,7 @@ Lateral Movements: 0
 Pivot Points: 0
 ```
 
-## Why Use TRACER?
+## Why Use TRACER PAL?
 
 **For Security Teams:**
 - **Standardized Documentation**: Consistent network forensics format
@@ -117,7 +117,7 @@ Pivot Points: 0
 
 ## Storage Options
 
-TRACER automatically detects and configures storage based on your environment:
+TRACER PAL automatically detects and configures storage based on your environment:
 
 | Storage Type | Use Case | Setup |
 |-------------|----------|-------|
@@ -127,7 +127,7 @@ TRACER automatically detects and configures storage based on your environment:
 
 ## REST API
 
-The TRACER API provides programmatic access for automation and integration:
+The TRACER PAL API provides programmatic access for automation and integration:
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
@@ -168,7 +168,7 @@ curl -X POST http://localhost:8000/cases \
 We welcome contributions! Please:
 
 1. **Test with real network scenarios** - Break it and report issues
-2. **Share workflow feedback** - How does TRACER fit your SOC processes?
+2. **Share workflow feedback** - How does TRACER PAL fit your SOC processes?
 3. **Submit issues** at https://github.com/steveinit/TRACER-framework/issues
 
 ## Support
@@ -181,4 +181,4 @@ We welcome contributions! Please:
 
 **Trust → Recognize → Analyze → Communicate → Engage → Refine**
 
-*TRACER v0.2 - Network forensics done right.*
+*TRACER PAL v0.2 - Network forensics done right.*

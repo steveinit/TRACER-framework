@@ -1,7 +1,7 @@
 # TRACER Framework Setup Guide
 
 ## Overview
-TRACER now supports both CLI and REST API modes for network path analysis. This guide covers setting up both environments. Current REST state is a local virtual environment backend. Something more substantial coming soon.
+TRACER PAL now supports both CLI and REST API modes for network path analysis. This guide covers setting up both environments. Current REST state is a local virtual environment backend. Something more substantial coming soon.
 
 ## Prerequisites
 - Python 3.11 or higher
@@ -69,7 +69,7 @@ Visit `http://localhost:8000/docs` for Swagger UI with interactive API testing.
 
 ## Storage Configuration
 
-TRACER supports multiple storage backends that auto-detect based on configuration:
+TRACER PAL supports multiple storage backends that auto-detect based on configuration:
 
 ### Option 1: JSON Storage (Default)
 - **Use case**: Development, small teams, simple deployment

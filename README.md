@@ -6,7 +6,7 @@
 
 ## Overview
 
-TRACER is a network path analysis tool designed for cybersecurity professionals conducting incident response and forensic investigations. It helps map network traffic paths from source to destination, documenting all network appliances and their configurations along the way.
+TRACER PAL is a network path analysis tool designed for cybersecurity professionals conducting incident response and forensic investigations. It helps map/trace network traffic paths from source to destination (or offender to victim), documenting all network appliances and their configurations along the way. TRACER PAL should also be used alongside vulnerability assessments and offensive security operations to empower security practitioners with proactive intelligence.
 
 **Key Features:**
 - **Dual Interface**: Command-line tool and REST API
@@ -16,9 +16,12 @@ TRACER is a network path analysis tool designed for cybersecurity professionals 
 - **Integration Friendly**: REST API for automation and SIEM integration
 
 ## Use Cases
-- **Attack Surface Mapping**: Document the exposed perimeters and endpoints from a network-centric perspective. Allows security practitioners to refine perimeter and endpoint monitoring and controls: Firewall, Router, NDR, IDS/IPS, Endpoint Security.
-- **Threat Traversal Mapping**: Document network path traversed by the threat. Allows security practitioners to take defense-in-depth approach to monitoring and controls: Switch, NDR, NAC.
-- **Iterative Threat Emulation**: Think like a threat actor. Document attack paths as well as circumvention paths around controls and monitoring.
+- **Attack Surface Mapping/Tracing**: Document the exposed perimeters and endpoints from a network-centric perspective - This is your threat infiltration location - Allows security practitioners to refine perimeter and endpoint monitoring and controls.
+- **Threat Traversal Mapping/Tracing**: Document network path traversed by the threat - This is your comprehensive blast radius: where the Threat went beyond the traditional "what they touched" - Allows security practitioners to take defense-in-depth approach to monitoring and controls.
+- **Iterative Threat Emulation**: Think like a threat threat actor. Document attack paths as well as circumvention paths around controls and monitoring.
+- **Control Implementation Assessment**: Validate controls perform as expected.
+
+### Implementing Controls and Monitoring
 
 ## Quick Start
 

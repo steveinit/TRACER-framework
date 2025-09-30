@@ -6,10 +6,11 @@ Provides REST API endpoints for network path analysis
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import Dict, List, Any, Optional
+from pydantic import BaseModel, Field
+from typing import Dict, List, Any, Optional, Union
 import json
 from datetime import datetime
+from enum import Enum
 
 from tracer import NetworkPathAnalyzer
 from storage import create_storage, print_storage_info
@@ -25,7 +26,7 @@ except ImportError:
 app = FastAPI(
     title="TRACER Framework API",
     description="Network Path Analysis Tool REST API",
-    version="0.1.0"
+    version="0.2.0"
 )
 
 # Configure CORS origins from environment
@@ -38,22 +39,44 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Enums for validation
+class InvestigationStatus(str, Enum):
+    ACTIVE = "active"
+    COMPLETED = "completed"
+    ON_HOLD = "on_hold"
+    ARCHIVED = "archived"
+
+class MovementType(str, Enum):
+    DIRECT = "direct"
+    LATERAL = "lateral"
+    PIVOT = "pivot"
+
 # Pydantic models for request/response
-class InitialDetection(BaseModel):
-    threat_type: str
-    source_ip: str
-    destination_ip: str
+class MinimalCaseRequest(BaseModel):
+    """Minimal case creation - just the essentials for starting investigation"""
+    threat_type: str = Field(..., description="Type of threat detected (e.g., 'SQL Injection', 'Malware C2')")
+    source_ip: str = Field(..., description="Source IP address of the threat")
+    destination_ip: str = Field(..., description="Destination IP address of the threat")
+    description: Optional[str] = Field(None, description="Optional initial description or notes")
+    investigator: Optional[str] = Field(None, description="Investigator name or ID")
 
 class NetworkElement(BaseModel):
-    element_type: str
-    name: str
-    movement_type: str = "direct"
-    source_info: Optional[Dict[str, str]] = {}
-    destination_info: Optional[Dict[str, str]] = {}
+    """Network element to add to investigation path"""
+    element_type: str = Field(..., description="Type of network element (firewall, switch, router, etc.)")
+    name: str = Field(..., description="Name or identifier of the network element")
+    movement_type: MovementType = Field(MovementType.DIRECT, description="How traffic moves through this element")
+    source_info: Optional[Dict[str, str]] = Field(default_factory=dict, description="Source-side configuration details")
+    destination_info: Optional[Dict[str, str]] = Field(default_factory=dict, description="Destination-side configuration details")
+    notes: Optional[str] = Field(None, description="Additional notes about this element")
 
-class CaseRequest(BaseModel):
-    initial_detection: InitialDetection
-    network_elements: Optional[List[NetworkElement]] = []
+class CaseUpdateRequest(BaseModel):
+    """Request model for PATCH operations on cases"""
+    description: Optional[str] = None
+    investigator: Optional[str] = None
+    status: Optional[InvestigationStatus] = None
+    network_elements: Optional[List[NetworkElement]] = None
+    notes: Optional[str] = None
+
 
 # Initialize storage backend with auto-detection
 storage = create_storage()
@@ -65,7 +88,7 @@ async def root():
     storage_type = "MongoDB" if hasattr(storage, 'client') else "JSON"
     return {
         "message": "TRACER Framework API",
-        "version": "0.1.0",
+        "version": "0.2.0",
         "storage_backend": storage_type
     }
 
@@ -85,7 +108,7 @@ async def health_check():
         "status": "healthy" if storage_status == "healthy" else "degraded",
         "storage_backend": storage_type,
         "storage_status": storage_status,
-        "version": "0.1.0"
+        "version": "0.2.0"
     }
 
 @app.get("/cases")
@@ -114,12 +137,14 @@ async def list_cases():
 
 @app.get("/cases/{case_id}")
 async def get_case(case_id: str):
-    """Get detailed information for a specific case"""
+    """Get detailed information for a specific case including investigation cursor"""
     try:
         if not storage.case_exists(case_id):
             raise HTTPException(status_code=404, detail="Case not found")
 
         case_data = storage.load_case(case_id)
+
+
         return {"case": case_data}
     except HTTPException:
         raise
@@ -127,46 +152,51 @@ async def get_case(case_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/cases")
-async def create_case(case_request: CaseRequest):
-    """Create a new case with initial detection and optional network elements"""
+async def create_case(case_request: MinimalCaseRequest):
+    """Create a new case with minimal initial information for iterative investigation"""
     try:
         # Create analyzer instance
         analyzer = NetworkPathAnalyzer(storage)
 
-        # Set initial detection
+        # Set initial detection with minimal required information
         analyzer.analysis["initial_detection"] = {
-            "threat_type": case_request.initial_detection.threat_type,
-            "source_ip": case_request.initial_detection.source_ip,
-            "destination_ip": case_request.initial_detection.destination_ip
+            "threat_type": case_request.threat_type,
+            "source_ip": case_request.source_ip,
+            "destination_ip": case_request.destination_ip
         }
 
-        # Add network elements if provided
-        for element in case_request.network_elements:
-            element_data = {
-                "type": element.element_type,
-                "movement_type": element.movement_type,
-                "source_info": element.source_info or {},
-                "destination_info": element.destination_info or {}
-            }
+        # Add optional fields
+        if case_request.description:
+            analyzer.analysis["description"] = case_request.description
+        if case_request.investigator:
+            analyzer.analysis["investigator"] = case_request.investigator
 
-            analyzer.analysis["network_elements"][element.name] = element_data
-            analyzer.analysis["path_sequence"].append(element.name)
+        # Initialize investigation status
+        analyzer.analysis["status"] = InvestigationStatus.ACTIVE.value
 
-        # Save case
+        # Initialize empty collections for iterative building
+        analyzer.analysis["notes"] = []
+
+        # Save minimal case
         analyzer.save_case_to_db()
 
         return {
             "case_id": analyzer.case_id,
-            "message": "Case created successfully",
-            "case_data": analyzer.analysis
+            "message": "Case created successfully - ready for iterative investigation",
+            "status": analyzer.analysis["status"],
+            "next_steps": [
+                f"Use PATCH /cases/{analyzer.case_id} to add network elements",
+                "Update investigation status as you progress",
+                "Add notes and findings iteratively"
+            ]
         }
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/cases/{case_id}/elements")
-async def add_network_element(case_id: str, element: NetworkElement):
-    """Add a network element to an existing case"""
+@app.patch("/cases/{case_id}")
+async def update_case(case_id: str, update_request: CaseUpdateRequest):
+    """Update case with new information - supports iterative investigation workflow"""
     try:
         if not storage.case_exists(case_id):
             raise HTTPException(status_code=404, detail="Case not found")
@@ -175,28 +205,76 @@ async def add_network_element(case_id: str, element: NetworkElement):
         analyzer = NetworkPathAnalyzer(storage)
         analyzer.load_existing_case(case_id)
 
-        # Add new element
-        element_data = {
-            "type": element.element_type,
-            "movement_type": element.movement_type,
-            "source_info": element.source_info or {},
-            "destination_info": element.destination_info or {}
-        }
+        updates_made = []
 
-        analyzer.analysis["network_elements"][element.name] = element_data
-        analyzer.analysis["path_sequence"].append(element.name)
+        # Update basic fields
+        if update_request.description is not None:
+            analyzer.analysis["description"] = update_request.description
+            updates_made.append("description")
+
+        if update_request.investigator is not None:
+            analyzer.analysis["investigator"] = update_request.investigator
+            updates_made.append("investigator")
+
+        if update_request.status is not None:
+            analyzer.analysis["status"] = update_request.status.value
+            updates_made.append("status")
+
+        # Add notes if provided
+        if update_request.notes is not None:
+            if "notes" not in analyzer.analysis:
+                analyzer.analysis["notes"] = []
+            analyzer.analysis["notes"].append({
+                "timestamp": datetime.now().isoformat(),
+                "content": update_request.notes
+            })
+            updates_made.append("notes")
+
+        # Add network elements if provided
+        if update_request.network_elements:
+            elements_added = []
+            for element in update_request.network_elements:
+                element_data = {
+                    "type": element.element_type,
+                    "movement_type": element.movement_type.value,
+                    "source_info": element.source_info,
+                    "destination_info": element.destination_info,
+                    "added_timestamp": datetime.now().isoformat()
+                }
+
+                if element.notes:
+                    element_data["notes"] = element.notes
+
+                analyzer.analysis["network_elements"][element.name] = element_data
+                analyzer.analysis["path_sequence"].append(element.name)
+                elements_added.append(element.name)
+
+            updates_made.append(f"network_elements ({len(elements_added)} added)")
+
 
         # Save updated case
         analyzer.save_case_to_db()
 
         return {
-            "message": "Network element added successfully",
-            "element_name": element.name,
-            "case_data": analyzer.analysis
+            "message": f"Case updated successfully - {', '.join(updates_made)}",
+            "case_id": case_id,
+            "updates_made": updates_made,
+            "total_elements": len(analyzer.analysis.get("path_sequence", []))
         }
 
     except HTTPException:
         raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/cases/{case_id}/elements")
+async def add_network_element(case_id: str, element: NetworkElement):
+    """Legacy endpoint - Add a single network element (use PATCH /cases/{case_id} instead)"""
+    try:
+        # Convert single element to update request format
+        update_request = CaseUpdateRequest(network_elements=[element])
+        return await update_case(case_id, update_request)
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
